@@ -205,6 +205,7 @@ resource "aws_iam_policy" "destination_writer_policy" {
       {
         Action = [
           "s3:PutObject",
+          "s3:GetObject",
           "s3:ListBucket"
         ]
         Effect = "Allow"
@@ -273,6 +274,7 @@ resource "aws_s3_bucket_policy" "destination_bucket_policy" {
       {
         Action = [
           "s3:PutObject",
+          "s3:GetObject",
           "s3:ListBucket"
         ]
         Effect = "Allow"
