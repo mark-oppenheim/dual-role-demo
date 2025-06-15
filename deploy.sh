@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Create a zip file for the Lambda function
+echo "Creating Lambda deployment package..."
+zip -j lambda_function.zip lambda_function.py
+
 # Apply Terraform configuration
 echo "Applying Terraform configuration..."
 terraform apply -auto-approve

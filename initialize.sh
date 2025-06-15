@@ -12,10 +12,6 @@ if ! command -v terraform &> /dev/null; then
     exit 1
 fi
 
-# Create a zip file for the Lambda function
-echo "Creating Lambda deployment package..."
-zip -j lambda_function.zip lambda_function.py
-
 # Initialize Terraform
 echo "Initializing Terraform..."
 terraform init
