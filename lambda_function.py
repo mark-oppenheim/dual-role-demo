@@ -92,8 +92,13 @@ def lambda_handler(event, context):
                 destination_bucket,
                 test_object_key
             )
+            
+            # Verify the object was copied successfully
+            dest_s3.head_object(Bucket=destination_bucket, Key=test_object_key)
+            print(f"Successfully verified object {test_object_key} in destination bucket {destination_bucket}")
+            
         except ClientError as e:
-            print(f"Error during object transfer: {e}")
+            print(f"Error during object transfer or verification: {e}")
             raise
         
         return {

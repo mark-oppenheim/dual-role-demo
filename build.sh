@@ -26,8 +26,19 @@ terraform apply -auto-approve
 
 # Get the Lambda function name from Terraform output
 LAMBDA_FUNCTION=$(terraform output -raw lambda_function_name)
+SOURCE_BUCKET=$(terraform output -raw source_bucket_name)
+DESTINATION_BUCKET=$(terraform output -raw destination_bucket_name)
 
 echo "Deployment complete!"
+echo "Resources created:"
+echo "- Lambda function: $LAMBDA_FUNCTION"
+echo "- Source bucket: $SOURCE_BUCKET"
+echo "- Destination bucket: $DESTINATION_BUCKET"
+echo ""
 echo "To test the Lambda function, use the AWS console or CLI:"
 echo "aws lambda invoke --function-name $LAMBDA_FUNCTION output.json"
 echo "cat output.json"
+echo ""
+echo "To verify the results, check both buckets:"
+echo "aws s3 ls s3://$SOURCE_BUCKET"
+echo "aws s3 ls s3://$DESTINATION_BUCKET"

@@ -2,13 +2,49 @@ provider "aws" {
   region = "us-east-1"
 }
 
+# Common tags for all resources
+locals {
+  common_tags = {
+    Project     = "DualSessionDemo"
+    Environment = "Demo"
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Random suffix to ensure resource names are unique
+resource "random_string" "suffix" {
+  length  = 8
+  special = false
+  upper   = false
+  numeric = false
+}
+
 # Create source and destination buckets
 resource "aws_s3_bucket" "source_bucket" {
   bucket = "dual-session-source-bucket-${random_string.suffix.result}"
+  tags   = local.common_tags
 }
 
 resource "aws_s3_bucket" "destination_bucket" {
   bucket = "dual-session-dest-bucket-${random_string.suffix.result}"
+  tags   = local.common_tags
+}
+
+# Block public access for both buckets
+resource "aws_s3_bucket_public_access_block" "source_bucket_access" {
+  bucket = aws_s3_bucket.source_bucket.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_public_access_block" "destination_bucket_access" {
+  bucket = aws_s3_bucket.destination_bucket.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 # Enable versioning for both buckets
@@ -45,17 +81,37 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "destination_encry
   }
 }
 
-# Random suffix to ensure bucket names are unique
-resource "random_string" "suffix" {
-  length  = 8
-  special = false
-  upper   = false
-  numeric = false
+# Add lifecycle configuration to expire objects after 7 days
+resource "aws_s3_bucket_lifecycle_configuration" "source_bucket_lifecycle" {
+  bucket = aws_s3_bucket.source_bucket.id
+
+  rule {
+    id     = "expire-old-objects"
+    status = "Enabled"
+
+    expiration {
+      days = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "destination_bucket_lifecycle" {
+  bucket = aws_s3_bucket.destination_bucket.id
+
+  rule {
+    id     = "expire-old-objects"
+    status = "Enabled"
+
+    expiration {
+      days = 7
+    }
+  }
 }
 
 # Lambda execution role
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "lambda_execution_role"
+  name = "lambda-execution-role-${random_string.suffix.result}"
+  tags = local.common_tags
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -73,7 +129,8 @@ resource "aws_iam_role" "lambda_execution_role" {
 
 # IAM role for reading from source bucket
 resource "aws_iam_role" "source_reader_role" {
-  name = "source_reader_role"
+  name = "source-reader-role-${random_string.suffix.result}"
+  tags = local.common_tags
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -91,7 +148,8 @@ resource "aws_iam_role" "source_reader_role" {
 
 # IAM role for writing to destination bucket
 resource "aws_iam_role" "destination_writer_role" {
-  name = "destination_writer_role"
+  name = "destination-writer-role-${random_string.suffix.result}"
+  tags = local.common_tags
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -109,7 +167,8 @@ resource "aws_iam_role" "destination_writer_role" {
 
 # Policy for source reader role
 resource "aws_iam_policy" "source_reader_policy" {
-  name = "source_reader_policy"
+  name = "source-reader-policy-${random_string.suffix.result}"
+  tags = local.common_tags
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -130,7 +189,8 @@ resource "aws_iam_policy" "source_reader_policy" {
 
 # Policy for destination writer role
 resource "aws_iam_policy" "destination_writer_policy" {
-  name = "destination_writer_policy"
+  name = "destination-writer-policy-${random_string.suffix.result}"
+  tags = local.common_tags
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -222,7 +282,8 @@ resource "aws_s3_bucket_policy" "destination_bucket_policy" {
 
 # Lambda execution policy
 resource "aws_iam_policy" "lambda_execution_policy" {
-  name = "lambda_execution_policy"
+  name = "lambda-execution-policy-${random_string.suffix.result}"
+  tags = local.common_tags
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -268,12 +329,13 @@ resource "aws_iam_role_policy_attachment" "lambda_policy_attachment" {
 
 # Create Lambda function
 resource "aws_lambda_function" "dual_session_demo" {
-  function_name = "dual-session-demo"
+  function_name = "dual-session-demo-${random_string.suffix.result}"
   filename      = "lambda_function.zip"
   handler       = "lambda_function.lambda_handler"
   runtime       = "python3.9"
   role          = aws_iam_role.lambda_execution_role.arn
   timeout       = 30
+  tags          = local.common_tags
 
   environment {
     variables = {
@@ -283,6 +345,11 @@ resource "aws_lambda_function" "dual_session_demo" {
       DEST_ROLE_ARN      = aws_iam_role.destination_writer_role.arn
     }
   }
+
+  # Ensure the zip file exists before deploying
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_policy_attachment
+  ]
 }
 
 # Outputs
