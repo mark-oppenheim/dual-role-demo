@@ -88,6 +88,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "source_bucket_lifecycle" {
   rule {
     id     = "expire-old-objects"
     status = "Enabled"
+    
+    filter {
+      prefix = ""  # Empty prefix means apply to all objects
+    }
 
     expiration {
       days = 7
@@ -101,6 +105,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "destination_bucket_lifecycle" 
   rule {
     id     = "expire-old-objects"
     status = "Enabled"
+    
+    filter {
+      prefix = ""  # Empty prefix means apply to all objects
+    }
 
     expiration {
       days = 7
