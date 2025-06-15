@@ -1,4 +1,4 @@
-# Dual Session Demo
+# Dual Session Demo[^1]
 
 This project demonstrates the use of dual AWS sessions in a Lambda function using Terraform and Python.
 
@@ -50,3 +50,5 @@ To remove all resources created by this demo:
 ```
 terraform destroy -auto-approve
 ```
+
+[^1]: All code generated via Amazon Q Developer
