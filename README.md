@@ -14,6 +14,7 @@ The demo consists of:
    - Creates a test object in the source bucket
    - Assumes the source reader role to read the object
    - Assumes the destination writer role to write the object to the destination bucket
+   - Streams data from the source bucket to the target bucket
 
 ## Prerequisites
 
@@ -23,22 +24,23 @@ The demo consists of:
 
 ## Deployment
 
-1. Make the build script executable:
-   ```
-   chmod +x build.sh
+1. Make the scripts executable:
+   ```bash
+   chmod +x *.sh
    ```
 
 2. Run the build script:
-   ```
-   ./build.sh
+   ```bash
+   ./initialize.sh
+   ./deploy.sh
    ```
 
 ## Testing
 
-After deployment, you can test the Lambda function using the AWS Console or CLI:
+After deployment, you can test the Lambda function and check its output:
 
-```
-aws lambda invoke --function-name dual-session-demo output.json
+```bash
+./run.sh
 ```
 
 Then check the contents of both buckets to verify that the object was copied successfully.
